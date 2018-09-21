@@ -39,8 +39,8 @@ namespace UnityOSC
 		{
 			_typeTag = DEFAULT.ToString();
 			this.Address = address;
-			Append(msgvalue);
-		}
+            Append(msgvalue);
+        }
 		#endregion
 		
 		#region Member Variables
@@ -53,6 +53,12 @@ namespace UnityOSC
 		private const char DEFAULT = ',';
 		
 		private string _typeTag;
+        public string TypeTag
+        {
+            get {
+                return _typeTag;
+            }
+        }
 		
 		#endregion
 		

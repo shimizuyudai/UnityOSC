@@ -99,7 +99,8 @@ public class OSCHandler
 
     public static OSCHandler Instance
     {
-        get {
+        get
+        {
             if (instance == null)
             {
                 instance = new OSCHandler();
@@ -147,14 +148,20 @@ public class OSCHandler
 
     public void Init(List<ServerInfo> serverInfoList, List<ClientInfo> clientInfoList)
     {
-
-        foreach (var serverInfo in serverInfoList)
+        if (serverInfoList != null)
         {
-            CreateServer(serverInfo.Name, serverInfo.Port);
+            foreach (var serverInfo in serverInfoList)
+            {
+                CreateServer(serverInfo.Name, serverInfo.Port);
+            }
         }
-        foreach (var clientInfo in clientInfoList)
+
+        if (clientInfoList != null)
         {
-            CreateClient(clientInfo.Name, IPAddress.Parse(clientInfo.IPAddress), clientInfo.Port);
+            foreach (var clientInfo in clientInfoList)
+            {
+                CreateClient(clientInfo.Name, IPAddress.Parse(clientInfo.IPAddress), clientInfo.Port);
+            }
         }
     }
 
@@ -162,14 +169,16 @@ public class OSCHandler
     #region Properties
     public Dictionary<string, ClientLog> Clients
     {
-        get {
+        get
+        {
             return _clients;
         }
     }
 
     public Dictionary<string, ServerLog> Servers
     {
-        get {
+        get
+        {
             return _servers;
         }
     }

@@ -4,8 +4,16 @@ using UnityEngine;
 using System.IO;
 using UnityOSC;
 using Newtonsoft.Json;
+using System.Net;
 
 public class OSCManager : MonoBehaviour {
+    [SerializeField]
+    private bool isSelfInit;
+    public bool HasInit{
+        get;
+        private set;
+    }
+
     public enum InitMode
     {
         SettingsFile,
@@ -23,10 +31,8 @@ public class OSCManager : MonoBehaviour {
 
     // Use this for initialization
     void Awake () {
-        queue = new Queue();
-        queue = Queue.Synchronized(queue);
-        OSCHandler.Instance.PacketReceivedEvent += Instance_PacketReceivedEvent;
-        OSCHandler.Instance.ErrorEvent += Instance_ErrorEvent;
+        if (!isSelfInit) return;
+
         switch (initMode)
         {
             case InitMode.SettingsFile:
@@ -39,7 +45,23 @@ public class OSCManager : MonoBehaviour {
         }
 
         if (settings == null) return;
-        OSCHandler.Instance.Init(settings);
+        this.Init(settings);
+    }
+
+    public void Init(OSCHandler.Settings settings)
+    {
+        this.Init(settings.ServerList, settings.ClientList);
+    }
+
+    public void Init(List<OSCHandler.ServerInfo> serverInfoList, List<OSCHandler.ClientInfo> clientInfoList)
+    {
+        // OSCHandler.Instance.Close();
+        queue = new Queue();
+        queue = Queue.Synchronized(queue);
+        OSCHandler.Instance.PacketReceivedEvent += Instance_PacketReceivedEvent;
+        OSCHandler.Instance.ErrorEvent += Instance_ErrorEvent;
+        OSCHandler.Instance.Init(serverInfoList, clientInfoList);
+        HasInit = true;
     }
 
     private void Instance_PacketReceivedEvent(OSCServer sender, OSCPacket packet)
@@ -50,6 +72,30 @@ public class OSCManager : MonoBehaviour {
     private void Instance_ErrorEvent(string message)
     {
         throw new System.NotImplementedException();
+    }
+
+    public void CreateClient(OSCHandler.ClientInfo clientInfo)
+    {
+        IPAddress ipAddress;
+        if(!IPAddress.TryParse(clientInfo.IPAddress, out ipAddress))return;
+        this.CreateClient(clientInfo.Name, ipAddress, clientInfo.Port);
+    }
+
+    public void CreateClient(string clientId, IPAddress ipAddress, int port)
+    {
+        OSCHandler.Instance.CreateClient(clientId, ipAddress, port);
+    }
+
+    public void CreateServer(OSCHandler.ServerInfo serverInfo)
+    {
+        OSCHandler.Instance.CreateServer(serverInfo.Name, serverInfo.Port);
+        HasInit = true;
+    }
+
+    public void CreateServer(string serverId, int port)
+    {
+        OSCHandler.Instance.CreateServer(serverId, port);
+        HasInit = true;
     }
 
     OSCHandler.Settings loadSettings()
@@ -67,6 +113,7 @@ public class OSCManager : MonoBehaviour {
     // Update is called once per frame
     void Update()
     {
+        if(!HasInit)return;
         while (queue.Count > 0)
         {
             OSCPacket packet = queue.Dequeue() as OSCPacket;
@@ -90,6 +137,7 @@ public class OSCManager : MonoBehaviour {
     private void OnDestroy()
     {
         OSCHandler.Instance.Close();
+        HasInit = false;
     }
 
     [ContextMenu("ExportSettings")]
